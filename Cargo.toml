@@ -1,0 +1,15 @@
+[package]
+name = "toxic_bot"
+version = "0.1.0"
+authors = ["Bohdan Iakymets <cyberbond95@gmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+telegram-bot = "0.8"
+tokio = { version = "0.2", features = ["full"] }
+futures = "0.3"
+regex = "1"
+rand = "0.8.0"
+if_chain = "1.0.1"
