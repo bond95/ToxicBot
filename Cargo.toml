@@ -1,16 +1,20 @@
 [package]
 name = "toxic_bot"
 version = "0.1.0"
-authors = ["Bohdan Iakymets <cyberbond95@gmail.com>"]
+authors = ["Bohdan Iakymets <cyberbond95@gmail.com>", "Serhii Zakharov <serhii@zahar.pro>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-telegram-bot = { git = "https://github.com/ayrat555/telegram-bot", branch = "ayrat555/api-fixes-10" }
 tokio = { version = "0.2", features = ["full"] }
 futures = "0.3"
 regex = "1"
 rand = "0.8.0"
-if_chain = "1.0.1"
-lazy_static = "1.4.0"
+# API is broken in the original library, so we're using a fork
+telegram-bot = { git = "https://github.com/ayrat555/telegram-bot", branch = "ayrat555/api-fixes-10" }
+whatlang = "0.11.1"
+log = "0.4.14"
+clap = "2.33.3"
+base64 = "0.13.0"
+env_logger = "0.8.3"
