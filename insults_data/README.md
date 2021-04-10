@@ -20,3 +20,11 @@ filtered insults from here https://www.kaggle.com/miklgr500/jigsaw-multilingual-
 ### dataset2
 
 just some random insults in Russian
+
+## ces
+
+Insults for Czech language
+
+### dataset1
+
+just some random insults in Czech

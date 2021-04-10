@@ -100,6 +100,7 @@ fn language_str_to_enum(language: &str) -> Lang {
     match language {
         "eng" => Lang::Eng,
         "rus" => Lang::Rus,
+        "ces" => Lang::Ces,
         _ => panic!("unknown language {}", language),
     }
 }

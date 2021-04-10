@@ -37,7 +37,9 @@ impl TelegramBot<'_> {
                     MessageKind::Text { ref data, .. } => {
                         self.handle_message(&message, &data).await?
                     }
-                    MessageKind::Photo { ref caption, .. } => {
+                    MessageKind::Photo { ref caption, .. }
+                    | MessageKind::Video { ref caption, .. }
+                    | MessageKind::Document { ref caption, .. } => {
                         self.handle_message(
                             &message,
                             caption.as_ref().unwrap_or(&"".to_string()),
