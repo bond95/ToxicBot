@@ -10,7 +10,7 @@ use if_chain::*;
 async fn main() -> Result<(), Error> {
     let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
     let bot_name = env::var("TELEGRAM_BOT_USERNAME").expect("TELEGRAM_BOT_USERNAME not set");
-    let re = Regex::new(r"(http|ftp|https)://([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?").unwrap();
+    let re = Regex::new(r"(http://www\.|https://www\.|http://|https://)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/.*)?").unwrap();
     let vs = vec!["Вилкой в глаз или в жопу раз?", "Когда на небе была очередь за умом или сиськами, ты стоял в очереди за пирожком", "Впервые вижу членовагину", "Do you like сосать?"];
     let api = Api::new(token);
 
