@@ -1,68 +1,101 @@
-#[macro_use]
-extern crate lazy_static;
-use std::env;
+use clap::{App, SubCommand};
+use crate::toxic_bot::ToxicBot;
+use std::{fs, env};
+use std::fs::{File};
+use crate::constants::*;
+use std::error::Error;
+use std::io::{BufReader, BufRead};
+use whatlang::Lang;
+use crate::telegram_bot::TelegramBot;
 
-use futures::StreamExt;
-use telegram_bot::*;
-use regex::Regex;
-use rand::{self, Rng};
-use if_chain::*;
+mod toxic_bot;
+mod cmd_bot;
+mod constants;
+mod telegram_bot;
 
-async fn check_message(api: Api, message: Message, data: &str, bot_name: String) -> Result<(), Error> {
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"(http://www\.|https://www\.|http://|https://)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/.*)?").unwrap();
-        static ref VS: Vec<&'static str> = vec!["Вилкой в глаз или в жопу раз?", "Когда на небе была очередь за умом или сиськами, ты стоял в очереди за пирожком", "Впервые вижу членовагину", "Do you like сосать?"];
+fn main() {
+    env_logger::init();
+
+    let matches = App::new("ToxicBot")
+        .about("A bot that will roast you")
+        .author("Bohdan Iakymets <cyberbond95@gmail.com>, Serhii Zakharov <serhii@zahar.pro>")
+        .subcommand(
+            SubCommand::with_name("cmd")
+                .about("just for testing, or if you're feeling \
+                        like you want to be roasted and don't have Telegram")
+        )
+        .subcommand(
+            SubCommand::with_name("telegram")
+                .about("to run telegram bot. \
+                        You'll also need to set TELEGRAM_BOT_TOKEN env variable")
+        )
+        .get_matches();
+
+    let mut bot = ToxicBot::new();
+
+    load_dir(&mut bot, DEFAULT_DATA_PATH).unwrap();
+
+    match matches.subcommand_name() {
+        Some("cmd") => cmd_bot::run(&mut bot),
+        Some("telegram") => {
+            let token = env::var("TELEGRAM_BOT_TOKEN")
+                .map_err(|_| "telegram bot token is not set")
+                .unwrap();
+            TelegramBot::new(&mut bot, token).unwrap().run().unwrap()
+        }
+        _ => println!("{}", matches.usage()),
     }
-    // Print received text message to stdout.
-    println!("<{}>: {}", &message.from.first_name, data);
-    if_chain! {
-        if let Some(ref reply_to_message) = message.reply_to_message;
-        if let MessageOrChannelPost::Message(mess) = &**reply_to_message;
-        if mess.from.username.as_ref().unwrap_or(&"".to_owned()) == &bot_name;
-        then {
-                api.send(message.text_reply(VS[rand::thread_rng().gen_range(0..VS.len())]))
-                .await?;
-        } else {
-            if RE.is_match(data) {
-                api.send(message.text_reply(VS[rand::thread_rng().gen_range(0..VS.len())]))
-                .await?;
-            }
+}
+
+fn load_dir(bot: &mut ToxicBot, path: &str) -> Result<(), Box<dyn Error>> {
+    for language_dir in fs::read_dir(path)? {
+        let language_dir = language_dir?;
+        let file_type = language_dir.file_type()?;
+
+        // ignore files or other things that aren't dirs in ./insults_data/
+        if !file_type.is_dir() {
+            continue;
+        }
+
+        let language_name = language_dir.file_name();
+        let language_name = language_name.to_str().unwrap();
+
+        // ignore dirs starting with .
+        if language_name.starts_with(".") {
+            continue;
+        }
+
+        for data_file in fs::read_dir(language_dir.path())? {
+            let data_file = data_file?;
+            let data_file = data_file.path();
+            let data_file = data_file.to_str().unwrap();
+            load_file(bot, language_name, data_file)?
         }
     }
+
     Ok(())
 }
 
-#[tokio::main]
-async fn main() -> Result<(), Error> {
-    let token = env::var("TELEGRAM_BOT_TOKEN").expect("TELEGRAM_BOT_TOKEN not set");
-    let bot_name = env::var("TELEGRAM_BOT_USERNAME").expect("TELEGRAM_BOT_USERNAME not set");
-    let api = Api::new(token);
+fn load_file(bot: &mut ToxicBot, language: &str, file_path: &str) -> Result<(), Box<dyn Error>> {
+    let file = File::open(file_path)?;
+    let reader = BufReader::new(file);
 
-    // Fetch new updates via long poll method
-    let mut stream = api.stream();
-    while let Some(update) = stream.next().await {
-        // If the received update contains a new message...
-        let update = update?;
-        println!("{:?}", update);
-        if let UpdateKind::Message(message) = update.kind {
-            let api_copy = api.clone();
-            let message_copy = message.clone();
-            let bot_name_clone = bot_name.clone();
-            match message.kind {
-                MessageKind::Text { ref data, .. } => check_message(api_copy, message_copy, data, bot_name_clone).await?,
-                MessageKind::Photo { ref caption, .. } => {
-                    if let Some(ref data) = caption {
-                        check_message(api_copy, message_copy, data, bot_name_clone).await?
-                    }
-                },
-                MessageKind::Video { ref caption, .. } => {
-                    if let Some(ref data) = caption {
-                        check_message(api_copy, message_copy, data, bot_name_clone).await?
-                    }
-                },
-                _ => continue,
-            }
-        }
-    }
+    let lines: Vec<String> = reader.lines().map(|line| {
+        let line = line.unwrap();
+        // TODO: use base64 only for some datasets which has base64 in the filename(to handle line breaks properly)
+        let line = base64::decode(line.as_bytes()).unwrap();
+        String::from_utf8(line).unwrap()
+    }).collect();
+
+    bot.load_dataset_of_insults(language_str_to_enum(language), &lines);
+
     Ok(())
+}
+
+fn language_str_to_enum(language: &str) -> Lang {
+    match language {
+        "eng" => Lang::Eng,
+        "rus" => Lang::Rus,
+        _ => panic!("unknown language {}", language),
+    }
 }
