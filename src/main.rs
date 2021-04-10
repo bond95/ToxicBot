@@ -33,7 +33,7 @@ fn main() {
 
     let mut bot = ToxicBot::new();
 
-    load_dir(&mut bot, DEFAULT_DATA_PATH).unwrap();
+    bot.load_dir_with_insults(DEFAULT_DATA_PATH).unwrap();
 
     match matches.subcommand_name() {
         Some("cmd") => cmd_bot::run(&mut bot),
@@ -44,63 +44,5 @@ fn main() {
             TelegramBot::new(&mut bot, token).unwrap().run().unwrap()
         }
         _ => println!("{}", matches.usage()),
-    }
-}
-
-fn load_dir(bot: &mut ToxicBot, path: &str) -> Result<(), Box<dyn Error>> {
-    for language_dir in fs::read_dir(path)? {
-        let language_dir = language_dir?;
-        let file_type = language_dir.file_type()?;
-
-        // ignore files or other things that aren't dirs in ./insults_data/
-        if !file_type.is_dir() {
-            continue;
-        }
-
-        let language_name = language_dir.file_name();
-        let language_name = language_name.to_str().unwrap();
-
-        // ignore dirs starting with .
-        if language_name.starts_with(".") {
-            continue;
-        }
-
-        for data_file in fs::read_dir(language_dir.path())? {
-            let data_file = data_file?;
-            let data_file = data_file.path();
-            let data_file = data_file.to_str().unwrap();
-            load_file(bot, language_name, data_file)?
-        }
-    }
-
-    Ok(())
-}
-
-fn load_file(bot: &mut ToxicBot, language: &str, file_path: &str) -> Result<(), Box<dyn Error>> {
-    let file = File::open(file_path)?;
-    let reader = BufReader::new(file);
-
-    let lines: Vec<String> = reader.lines().map(|line| {
-        let line = line.unwrap();
-
-        if file_path.ends_with("base64") {
-            let line = base64::decode(line.as_bytes()).unwrap();
-            String::from_utf8(line).unwrap()
-        } else {
-            line
-        }
-    }).collect();
-
-    bot.load_dataset_of_insults(language_str_to_enum(language), &lines);
-
-    Ok(())
-}
-
-fn language_str_to_enum(language: &str) -> Lang {
-    match language {
-        "eng" => Lang::Eng,
-        "rus" => Lang::Rus,
-        "ces" => Lang::Ces,
-        _ => panic!("unknown language {}", language),
     }
 }
