@@ -44,7 +44,7 @@ impl TelegramBot<'_> {
                         ).await?
                     }
                     MessageKind::NewChatMembers { .. } => {
-                        self.handle_message(&message, "").await?
+                        self.send_response(&message, "").await?;
                     }
                     kind => log::info!("update of kind {:?} was ignored", kind)
                 }
