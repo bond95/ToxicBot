@@ -82,9 +82,13 @@ fn load_file(bot: &mut ToxicBot, language: &str, file_path: &str) -> Result<(), 
 
     let lines: Vec<String> = reader.lines().map(|line| {
         let line = line.unwrap();
-        // TODO: use base64 only for some datasets which has base64 in the filename(to handle line breaks properly)
-        let line = base64::decode(line.as_bytes()).unwrap();
-        String::from_utf8(line).unwrap()
+
+        if file_path.ends_with("base64") {
+            let line = base64::decode(line.as_bytes()).unwrap();
+            String::from_utf8(line).unwrap()
+        } else {
+            line
+        }
     }).collect();
 
     bot.load_dataset_of_insults(language_str_to_enum(language), &lines);
