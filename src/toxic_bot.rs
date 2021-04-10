@@ -86,7 +86,7 @@ impl ToxicBot {
         Ok(())
     }
 
-    pub fn load_file_with_insults(&mut self, language: &str, file_path: &str) -> Result<(), Box<dyn Error>> {
+    fn load_file_with_insults(&mut self, language: &str, file_path: &str) -> Result<(), Box<dyn Error>> {
         let file = File::open(file_path)?;
         let reader = BufReader::new(file);
 
