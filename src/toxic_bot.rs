@@ -1,4 +1,3 @@
-use whatlang::Lang;
 use std::collections::HashMap;
 use rand::prelude::ThreadRng;
 use crate::constants::*;
@@ -7,41 +6,54 @@ use std::error::Error;
 use std::fs;
 use std::fs::File;
 use std::io::{BufReader, BufRead};
+use lingua::{Language, LanguageDetector, LanguageDetectorBuilder};
+use lingua::Language::{English, Czech, Russian};
 
 pub struct ToxicBot {
-    insults: HashMap<Lang, Vec<String>>,
+    insults: HashMap<Language, Vec<String>>,
     rng: ThreadRng,
+    language_detector: LanguageDetector,
 }
 
 impl ToxicBot {
     pub fn new() -> ToxicBot {
+        let language_detector = LanguageDetectorBuilder::from_languages(
+            &vec![English, Czech, Russian],
+        ).build();
+
         ToxicBot {
             insults: HashMap::new(),
             rng: rand::thread_rng(),
+            language_detector,
         }
     }
 
     pub fn get_response(&mut self, message: &str) -> String {
-        let lang = whatlang::detect(message).map_or_else(|| {
-            log::warn!("unable to detect language for message '{}'", message);
-            DEFAULT_INSULT_LANGUAGE
-        }, |i| {
-            log::info!("detected language for message '{}' as '{:?}'", message, i);
-            i.lang()
-        });
+        let lang = self.language_detector
+            .detect_language_of(message)
+            .map_or_else(|| {
+                log::warn!(
+                    "unable to detect language for message '{}', using the default language '{:?}'",
+                    message, DEFAULT_INSULT_LANGUAGE,
+                );
+                DEFAULT_INSULT_LANGUAGE
+            }, |l| {
+                log::info!("detected language for message '{}' as '{:?}'", message, l);
+                l
+            });
 
         match self.insults.get(&lang) {
             // if the language exists, take a random message from its dataset
             Some(insults) => insults.choose(&mut self.rng).unwrap().clone(),
             None => {
                 // choose random language if the requested language doesn't exist
-                let keys: Vec<Lang> = self.insults.keys().map(|l| *l).collect();
+                let keys: Vec<Language> = self.insults.keys().map(|l| l.clone()).collect();
                 if keys.len() == 0 {
                     // no languages at all
                     return INSULT_NOT_FOUND_ANSWER.to_string();
                 }
 
-                let random_key = *keys.choose(&mut self.rng).unwrap();
+                let random_key = keys.choose(&mut self.rng).unwrap().clone();
                 let insults = self.insults.get(&random_key).unwrap();
 
                 insults.choose(&mut self.rng).unwrap().clone()
@@ -49,7 +61,7 @@ impl ToxicBot {
         }
     }
 
-    pub fn load_slice_with_insults<T: ToString>(&mut self, language: Lang, data: &[T]) {
+    pub fn load_slice_with_insults<T: ToString>(&mut self, language: Language, data: &[T]) {
         let data = data.iter().map(|x| x.to_string());
         match self.insults.get_mut(&language) {
             Some(insults) => insults.extend(data),
@@ -107,19 +119,19 @@ impl ToxicBot {
     }
 }
 
-fn language_str_to_enum(language: &str) -> Lang {
+fn language_str_to_enum(language: &str) -> Language {
     match language {
-        "eng" => Lang::Eng,
-        "rus" => Lang::Rus,
-        "ces" => Lang::Ces,
+        "eng" => English,
+        "rus" => Russian,
+        "ces" => Czech,
         _ => panic!("unknown language {}", language),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use whatlang::Lang;
     use crate::toxic_bot::ToxicBot;
+    use lingua::Language;
 
     #[test]
     fn toxic_bot_test() {
@@ -128,8 +140,8 @@ mod tests {
         let russian_insults = vec!["ты пидор", "мудак", "иди нахуй"];
         let english_insults = vec!["fuck you", "you're moron", "asshole!"];
 
-        bot.load_dataset_of_insults(Lang::Rus, &russian_insults);
-        bot.load_dataset_of_insults(Lang::Eng, &english_insults);
+        bot.load_slice_with_insults(Language::Russian, &russian_insults);
+        bot.load_slice_with_insults(Language::English, &english_insults);
 
         let resp = bot.get_response("привет");
         assert!(

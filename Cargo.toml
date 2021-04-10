@@ -13,8 +13,8 @@ regex = "1"
 rand = "0.8.0"
 # API is broken in the original library, so we're using a fork
 telegram-bot = { git = "https://github.com/ayrat555/telegram-bot", branch = "ayrat555/api-fixes-10" }
-whatlang = "0.11.1"
 log = "0.4.14"
 clap = "2.33.3"
 base64 = "0.13.0"
 env_logger = "0.8.3"
+lingua = "1.2.0"
