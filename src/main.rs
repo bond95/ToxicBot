@@ -1,11 +1,7 @@
 use clap::{App, SubCommand};
 use crate::toxic_bot::ToxicBot;
-use std::{fs, env};
-use std::fs::{File};
+use std::env;
 use crate::constants::*;
-use std::error::Error;
-use std::io::{BufReader, BufRead};
-use whatlang::Lang;
 use crate::telegram_bot::TelegramBot;
 
 mod toxic_bot;
