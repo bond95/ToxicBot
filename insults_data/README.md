@@ -19,11 +19,11 @@ Filtered insults from here https://www.kaggle.com/miklgr500/jigsaw-multilingual-
 
 ### dataset2
 
-Just some random insults in Russian in form of base64(to handle line breaks properly)
+Just some random insults in Russian
 
 ### dataset-pikabu
 
-Insults collected from pikabu.ru
+Insults collected from pikabu.ru in form of base64(to handle line breaks properly)
 
 ## ces
 
