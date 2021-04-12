@@ -29,6 +29,7 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_LOGIN: ${{ secrets.DEPLOY_LOGIN }}
     steps:
+      - uses: actions/checkout@v2
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
