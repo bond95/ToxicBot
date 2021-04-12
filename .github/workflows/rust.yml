@@ -20,6 +20,11 @@ jobs:
       run: cargo build --verbose
     - name: Run tests
       run: cargo test --verbose
+    - name: Make build artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: release-build
+        path: target/release/toxic_bot
 
   deploy:
     runs-on: ubuntu-latest
@@ -29,9 +34,14 @@ jobs:
       DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
       DEPLOY_LOGIN: ${{ secrets.DEPLOY_LOGIN }}
     steps:
+      - name: Download build
+        uses: actions/download-artifact@v2
+        with:
+          name: release-build
       - name: Install SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_KEY }}
+          known_hosts: ${{ secrets.DEPLOY_HOST }}
       - name: ./deploy.sh
         run: exit 0
