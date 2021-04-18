@@ -15,7 +15,7 @@ pub struct TelegramBot<'a> {
 impl TelegramBot<'_> {
     pub fn new(bot: &mut ToxicBot, token: String) -> Result<TelegramBot, Box<dyn Error>> {
         let api = Api::new(token);
-        let url_regex = Regex::new(r"(http://www\.|https://www\.|http://|https://)?[a-z0-9]+([\-\.]{1}[a-z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/.*)?")?;
+        let url_regex = Regex::new(r"(http://www\.|https://www\.|http://|https://)?[a-zA-Z0-9]+([\-\.]{1}[a-zA-Z0-9]+)*\.[a-z]{2,5}(:[0-9]{1,5})?(/.*)?")?;
 
         Ok(TelegramBot {
             bot,
