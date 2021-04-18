@@ -37,5 +37,5 @@ jobs:
           known_hosts: ${{ secrets.DEPLOY_HOST }}
       - name: Build release
         run: cargo build --release
-      - name: ./deploy.sh
-        run: exit 0
+      - name: Deploy release
+        run: ./deploy.sh
